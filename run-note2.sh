@@ -48,10 +48,12 @@ sed -i "/symlink \/storage\/sdcard1 \/mnt\/extSdCard/d" init.smdk4x12.rc
 
 sed -i "/service sdcard \/system\/bin\/sdcard -u 1023 -g 1023 -l \/data\/media/,+1d" init.smdk4x12.rc
 sed -i "s/service fuse_sdcard1 \/system\/bin\/sdcard -u 1023 -g 1023 \/mnt\/media_rw\/sdcard1 \/storage\/sdcard1/service fuse_sdcard0 \/system\/bin\/sdcard -u 1023 -g 1023 \/mnt\/media_rw\/sdcard0 \/storage\/sdcard0/" init.smdk4x12.rc
+sed -i "s/service fuse_sdcard1 \/system\/bin\/sdcard -u 1023 -g 1023 -w 1023 \/mnt\/media_rw\/sdcard1 \/storage\/sdcard1/service fuse_sdcard0 \/system\/bin\/sdcard -u 1023 -g 1023 \/mnt\/media_rw\/sdcard0 \/storage\/sdcard0/" init.smdk4x12.rc
 
 # change fstab.smdk4x12
 echo "Patch fstab.smdk4x12 ..."
-sed -i "s/voldmanaged=sdcard1:auto/voldmanaged=sdcard0:auto,noemulatedsd/" fstab.smdk4x12
+sed -i "s/voldmanaged=sdcard1:auto/voldmanaged=sdcard0:auto/" fstab.smdk4x12
+sed -i "s/voldmanaged=sdcard0:auto$/voldmanaged=sdcard0:auto,noemulatedsd/" fstab.smdk4x12
 
 find . | cpio -o -H newc | gzip > ../newramdisk.cpio.gz
 cd ../../
@@ -63,7 +65,7 @@ mv new-boot.img boot.img
 
 echo "Decompile framework-res.apk ..."
 # change storage-list.xml
-java -jar $APKTOOL d system/framework/framework-res.apk tmp-framework-res
+java -jar $APKTOOL d -f -o tmp-framework-res system/framework/framework-res.apk 
 
 echo "Patch storage-list.xml ..."
 sed -i "/android:mountPoint=\"\/storage\/sdcard0\"/d" tmp-framework-res/res/xml/storage_list.xml
@@ -71,7 +73,7 @@ sed -i "s/storage_sd_card\" android:primary=\"false\" android:removable=\"true\"
 sed -i "s/android:mountPoint=\"\/storage\/sdcard1\"/android:mountPoint=\"\/storage\/sdcard0\"/" tmp-framework-res/res/xml/storage_list.xml
 
 echo "Build new-framework-res.jar ..."
-java -jar $APKTOOL b tmp-framework-res new-framework-res.jar
+java -jar $APKTOOL b -o new-framework-res.jar tmp-framework-res
 
 echo "Get compiled storage_list.xml ..."
 mkdir tmp-framework-jar
